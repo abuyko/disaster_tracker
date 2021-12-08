@@ -1,5 +1,7 @@
-import pika
 import sys
+import json
+
+import pika
 
 
 class Subscriber:
@@ -22,7 +24,8 @@ class Subscriber:
 
     def on_message_callback(self, channel, method, properties, body):
         binding_key = method.routing_key
-        print(f"received new message '{body}' for -" + binding_key)
+        message = json.loads(body)
+        print(f"[x] Received new message '{message}' for -" + binding_key)
 
     def setup(self):
         channel = self.connection.channel()
@@ -41,21 +44,26 @@ class Subscriber:
             on_message_callback=self.on_message_callback,
             auto_ack=True,
         )
-        print('[*] Waiting for data for ' + self.queue_name + '. To exit press CTRL + C')
+        print(f'[*] Waiting for data for {self.queue_name}. To exit press CTRL + C')
         try:
             channel.start_consuming()
         except KeyboardInterrupt:
             channel.stop_consuming()
 
 
-config = {'host': 'localhost', 'port': 5672, 'exchange': 'my_exchange'}
+def subscribe():
+    config = {'host': 'localhost', 'port': 5672, 'exchange': 'my_exchange'}
 
-if len(sys.argv) < 2:
-    print('Usage: ' + __file__ + ' <queue_name> <binding_key>')
-    sys.exit()
-else:
-    queue_name = sys.argv[1]
-    # key in the form exchange.*
-    key = sys.argv[2]
-    subscriber = Subscriber(queue_name, key, config)
-    subscriber.setup()
+    if len(sys.argv) < 2:
+        print('Usage: ' + __file__ + ' <queue_name> <binding_key>')
+        sys.exit()
+    else:
+        queue_name = sys.argv[1]
+        # key in the form exchange.*
+        key = sys.argv[2]
+        subscriber = Subscriber(queue_name, key, config)
+        subscriber.setup()
+
+
+if __name__ == '__main__':
+    subscribe()

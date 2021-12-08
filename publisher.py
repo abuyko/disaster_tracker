@@ -1,3 +1,6 @@
+import time
+import json
+
 import pika
 
 
@@ -32,6 +35,16 @@ class Publisher:
         return pika.BlockingConnection(param)
 
 
-config = {'host': 'localhost', 'port': 5672, 'exchange': 'my_exchange'}
-publisher = Publisher(config)
-publisher.publish('nse.nifty', 'New Data')
+def publish():
+    config = {'host': 'localhost', 'port': 5672, 'exchange': 'my_exchange'}
+    publisher = Publisher(config)
+
+    while True:
+        message = json.dumps({'disaster_happened': False})
+        publisher.publish('disaster.alert', message)
+
+        time.sleep(10)
+
+
+if __name__ == '__main__':
+    publish()
